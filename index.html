@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>To-Do List</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>To-Do List</h1>
+
+  <!-- Form Tambah Tugas -->
+  <form id="add-task-form">
+    <input type="text" id="task-input" placeholder="Tambah tugas baru..." required />
+    <button type="submit" class="add-btn">Tambah</button>
+  </form>
+
+  <!-- Daftar Tugas -->
+  <ul id="todo-list" class="todo-list"></ul>
+
+  <script>
+    const API_URL = 'api.php';
+
+    // Ambil semua tugas dari database (GET)
+    async function fetchTodos() {
+      const response = await fetch(API_URL);
+      const todos = await response.json();
+      renderTodos(todos);
+    }
+
+    // Render tugas ke dalam daftar
+    function renderTodos(todos) {
+      const todoList = document.getElementById('todo-list');
+      todoList.innerHTML = ''; // Hapus semua elemen sebelumnya
+      todos.forEach(todo => {
+        const li = document.createElement('li');
+        li.className = todo.status == 1 ? 'completed' : '';
+        li.innerHTML = `
+          ${todo.task}
+          <div class="actions">
+            <button class="complete-btn" onclick="markComplete(${todo.id})">Selesai</button>
+            <button class="delete-btn" onclick="deleteTask(${todo.id})">Hapus</button>
+          </div>
+        `;
+        todoList.appendChild(li);
+      });
+    }
+
+    // Tambah tugas baru (POST)
+    document.getElementById('add-task-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const taskInput = document.getElementById('task-input');
+      const task = taskInput.value;
+      await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task })
+      });
+      taskInput.value = ''; // Reset input
+      fetchTodos(); // Refresh daftar
+    });
+
+    // Tandai tugas sebagai selesai (PUT)
+    async function markComplete(id) {
+      await fetch(API_URL, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      fetchTodos(); // Refresh daftar
+    }
+
+    // Hapus tugas (DELETE)
+    async function deleteTask(id) {
+      await fetch(API_URL, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      fetchTodos(); // Refresh daftar
+    }
+
+    // Saat halaman dimuat, ambil daftar tugas
+    fetchTodos();
+  </script>
+</body>
+</html>
